@@ -538,6 +538,12 @@ def find_carl_files(cwd: str) -> dict[str, Path]:
             break
         search_path = search_path.parent
 
+    # Fallback: check ~/.carl (global install) if not found via cwd traversal
+    if carl_path is None:
+        global_carl = Path.home() / CARL_FOLDER
+        if global_carl.exists() and (global_carl / 'manifest').exists():
+            carl_path = global_carl
+
     if carl_path is None:
         return carl_files
 
@@ -546,6 +552,7 @@ def find_carl_files(cwd: str) -> dict[str, Path]:
             # Normalize name: strip .env extension so both 'domain' and 'domain.env' work
             name = f.stem if f.suffix.lower() == '.env' else f.name
             carl_files[name] = f
+            carl_files[name.lower()] = f  # lowercase key for case-insensitive lookup
 
     return carl_files
 
@@ -750,8 +757,8 @@ def match_domains_to_prompt(
         # Check each keyword
         domain_matches = []
         for keyword in recall_list:
-            # Use word boundary matching for better accuracy
-            pattern = re.escape(keyword)
+            # Use word boundary matching to avoid partial matches (e.g. "co" in "github.com")
+            pattern = r'\b' + re.escape(keyword) + r'\b'
             if re.search(pattern, prompt_lower):
                 domain_matches.append(keyword)
 
