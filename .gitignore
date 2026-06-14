@@ -19,5 +19,6 @@ Thumbs.db
 # PAUL project state (per-machine)
 .paul/
 
-# Node modules in MCP
+# Node modules in MCP (also matches the symlink created by install-mcp-deps.py)
+mcp/node_modules
 mcp/node_modules/

@@ -14,6 +14,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'node:fs';
 
 // Tool group imports
 import { TOOLS as domainTools, handleTool as handleDomain } from './tools/domains.js';
@@ -28,7 +29,7 @@ import { TOOLS as carlJsonTools, handleTool as handleCarlJson } from './tools/ca
 // Resolve workspace from this file's location:
 // Installed at .carl/carl-mcp/index.js → workspace is ../..
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const WORKSPACE_PATH = path.resolve(__dirname, '../..');
+const WORKSPACE_PATH = (() => { const c = process.env.CLAUDE_PROJECT_DIR; if (c && c.trim()) return path.resolve(c.trim()); const real = (p) => { try { return fs.realpathSync(path.resolve(p)); } catch { return path.resolve(p); } }; const h = process.env.HOME || process.env.USERPROFILE; const home = h ? real(h) : null; const f = real(path.resolve(__dirname, '../..')); const vendored = path.basename(__dirname) === 'carl-mcp' && path.basename(path.dirname(__dirname)) === '.carl'; if (vendored && f !== home) return f; const cwd = real(process.cwd()); if (cwd !== home) return cwd; throw new Error('[CARL] Refusing to start: CLAUDE_PROJECT_DIR is unset and no project workspace could be resolved (cwd and install location are your home directory; refusing to read a global ~/.carl store). Set CLAUDE_PROJECT_DIR or launch carl-mcp from the project root.'); })();
 
 function debugLog(...args) {
     console.error('[CARL]', new Date().toISOString(), ...args);

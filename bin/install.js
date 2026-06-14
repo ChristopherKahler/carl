@@ -112,9 +112,33 @@ function expandTilde(filePath) {
 }
 
 /**
- * Recursively copy directory
+ * Copy a single file, substituting ${CLAUDE_PLUGIN_ROOT} with pluginRootSub
+ * in text files (UTF-8 decodable). Binary files are copied byte-for-byte.
  */
-function copyDir(srcDir, destDir) {
+function copyFileWithMacroSub(srcPath, destPath, pluginRootSub) {
+  const _TEXT_EXTS = new Set(['.js', '.mjs', '.py', '.json', '.md', '.txt', '.sh', '.yaml', '.yml', '.toml']);
+  const ext = path.extname(destPath).toLowerCase();
+  const isText = ext === '' || _TEXT_EXTS.has(ext);
+  if (isText && pluginRootSub) {
+    let content;
+    try {
+      content = fs.readFileSync(srcPath, 'utf8');
+    } catch (_e) {
+      // Not valid UTF-8 — copy raw
+      fs.copyFileSync(srcPath, destPath);
+      return;
+    }
+    const rewritten = content.split('${CLAUDE_PLUGIN_ROOT}').join(pluginRootSub);
+    fs.writeFileSync(destPath, rewritten, 'utf8');
+  } else {
+    fs.copyFileSync(srcPath, destPath);
+  }
+}
+
+/**
+ * Recursively copy directory, substituting ${CLAUDE_PLUGIN_ROOT} in text files.
+ */
+function copyDir(srcDir, destDir, pluginRootSub) {
   fs.mkdirSync(destDir, { recursive: true });
 
   const entries = fs.readdirSync(srcDir, { withFileTypes: true });
@@ -124,9 +148,9 @@ function copyDir(srcDir, destDir) {
     const destPath = path.join(destDir, entry.name);
 
     if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
+      copyDir(srcPath, destPath, pluginRootSub);
     } else {
-      fs.copyFileSync(srcPath, destPath);
+      copyFileWithMacroSub(srcPath, destPath, pluginRootSub);
     }
   }
 }
@@ -265,7 +289,7 @@ function addCarlBlock(claudeMdPath) {
 /**
  * Install MCP server
  */
-function installMcp(carlDir, src) {
+function installMcp(carlDir, src, pluginRootSub) {
   const mcpDest = path.join(carlDir, 'carl-mcp');
   const mcpSrc = path.join(src, 'mcp');
 
@@ -274,8 +298,8 @@ function installMcp(carlDir, src) {
     return null;
   }
 
-  // Copy MCP files
-  copyDir(mcpSrc, mcpDest);
+  // Copy MCP files (substitute ${CLAUDE_PLUGIN_ROOT} with install base)
+  copyDir(mcpSrc, mcpDest, pluginRootSub);
   console.log(`  ${green}✓${reset} Installed carl-mcp`);
 
   // Run npm install for MCP dependencies
@@ -319,19 +343,24 @@ function install(isGlobal, addToClaudeMd = true) {
 
   console.log(`  Installing to ${amber}${locationLabel}${reset} and ${amber}${carlLabel}${reset}\n`);
 
+  // The effective plugin root for substituting ${CLAUDE_PLUGIN_ROOT} in copied
+  // text files. In plugin mode this macro is resolved by Claude Code; in npx
+  // mode we substitute the actual claudeDir so no literal macro remains.
+  const pluginRootSub = claudeDir;
+
   // 1. Copy hook script
   const hooksDir = path.join(claudeDir, 'hooks');
   fs.mkdirSync(hooksDir, { recursive: true });
   const hookSrc = path.join(src, 'hooks', 'carl-hook.py');
   const hookDest = path.join(hooksDir, 'carl-hook.py');
-  fs.copyFileSync(hookSrc, hookDest);
+  copyFileWithMacroSub(hookSrc, hookDest, pluginRootSub);
   fs.chmodSync(hookDest, '755');
   console.log(`  ${green}✓${reset} Installed hooks/carl-hook.py (v2)`);
 
   // 2. Copy .carl-template to .carl (carl.json + sessions/)
   const carlTemplateSrc = path.join(src, '.carl-template');
   if (!fs.existsSync(carlDir)) {
-    copyDir(carlTemplateSrc, carlDir);
+    copyDir(carlTemplateSrc, carlDir, pluginRootSub);
     // Stamp the install date in carl.json
     const carlJsonPath = path.join(carlDir, 'carl.json');
     if (fs.existsSync(carlJsonPath)) {
@@ -348,7 +377,7 @@ function install(isGlobal, addToClaudeMd = true) {
     // .carl/ exists but no carl.json — v1 user, copy template
     const carlJsonSrc = path.join(carlTemplateSrc, 'carl.json');
     const carlJsonDest = path.join(carlDir, 'carl.json');
-    fs.copyFileSync(carlJsonSrc, carlJsonDest);
+    copyFileWithMacroSub(carlJsonSrc, carlJsonDest, pluginRootSub);
     console.log(`  ${green}✓${reset} Added carl.json to existing ${carlLabel}`);
     console.log(`  ${yellow}Note: Existing v1 files detected. Run migrate-v1-to-v2.sh to convert.${reset}`);
   } else {
@@ -356,7 +385,7 @@ function install(isGlobal, addToClaudeMd = true) {
   }
 
   // 3. Install MCP server
-  const mcpIndexPath = installMcp(carlDir, src);
+  const mcpIndexPath = installMcp(carlDir, src, pluginRootSub);
 
   // 4. Wire hook into settings.json
   wireHook(claudeDir, hookDest);

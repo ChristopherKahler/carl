@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "carl",
+  "owner": {
+    "name": "ChristopherKahler",
+    "url": "https://github.com/ChristopherKahler/carl"
+  },
+  "metadata": {
+    "description": "CARL — Context Augmentation & Reinforcement Layer: decision log + domain rules, as a native plugin."
+  },
+  "plugins": [
+    {
+      "name": "carl",
+      "source": ".",
+      "description": "CARL — Context Augmentation & Reinforcement Layer: decision log + domain rules, as a native plugin.",
+      "category": "framework",
+      "keywords": ["carl", "decisions", "rules", "memory"]
+    }
+  ]
+}

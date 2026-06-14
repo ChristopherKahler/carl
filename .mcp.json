@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "carl-mcp": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/index.js"],
+      "env": {
+        "CLAUDE_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}",
+        "NODE_PATH": "${CLAUDE_PLUGIN_DATA}/node_modules"
+      }
+    }
+  }
+}

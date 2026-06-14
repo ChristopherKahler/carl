@@ -1,0 +1,10 @@
+{
+  "name": "carl",
+  "version": "2.0.2",
+  "description": "CARL — Context Augmentation & Reinforcement Layer: decision log + domain rules, as a native plugin.",
+  "author": {
+    "name": "Chris Kahler"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/ChristopherKahler/carl#readme"
+}
