@@ -27,8 +27,11 @@ import { TOOLS as carlJsonTools, handleTool as handleCarlJson } from './tools/ca
 
 // Resolve workspace from this file's location:
 // Installed at .carl/carl-mcp/index.js → workspace is ../..
+// Prefer CLAUDE_PROJECT_DIR when set so the MCP server anchors to the
+// correct project root regardless of where node was invoked from.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const WORKSPACE_PATH = path.resolve(__dirname, '../..');
+const WORKSPACE_PATH = (process.env.CLAUDE_PROJECT_DIR && process.env.CLAUDE_PROJECT_DIR.trim())
+    ? path.resolve(process.env.CLAUDE_PROJECT_DIR.trim()) : path.resolve(__dirname, '../..');
 
 function debugLog(...args) {
     console.error('[CARL]', new Date().toISOString(), ...args);
