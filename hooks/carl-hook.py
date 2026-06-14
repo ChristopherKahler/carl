@@ -18,6 +18,7 @@ What gets injected:
 5. Star commands — from carl.json config
 """
 import json
+import os
 import sys
 import re
 from pathlib import Path
@@ -570,7 +571,7 @@ def main():
         print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
         sys.exit(1)
 
-    cwd = input_data.get('cwd', str(Path.home()))
+    cwd = os.environ.get('CLAUDE_PROJECT_DIR') or input_data.get('cwd') or str(Path.home())
     session_id = input_data.get('sessionId', '') or input_data.get('session_id', '')
     user_prompt = (
         input_data.get('prompt', '') or
