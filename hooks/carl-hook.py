@@ -293,13 +293,13 @@ def get_all_decisions_summary(carl_data: dict) -> str:
         total_archived += archived
 
     if not domain_summaries and total_active == 0:
-        return '<decisions>No decisions logged yet. Use carl_log_decision tool to start.</decisions>'
+        return '<decisions>No decisions logged yet. Use carl_v2_log_decision tool to start.</decisions>'
 
     lines = [
         '<decisions>',
         'Domains: {}'.format(', '.join(domain_summaries)),
         'Total: {} active, {} archived'.format(total_active, total_archived),
-        'Tools: carl_search_decisions(keyword), carl_get_decisions(domain), carl_log_decision(domain, decision, rationale, recall)',
+        'Tools: carl_v2_search_decisions(keyword), carl_v2_get_domain(domain), carl_v2_log_decision(domain, decision, rationale, recall)',
         '</decisions>',
     ]
     return '\n'.join(lines)
